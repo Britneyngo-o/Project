@@ -1,0 +1,81 @@
+# Load necessary libraries
+library(readr)      # For reading CSV files
+library(ggplot2)    # For creating plots
+library(broom)      # For tidying model output
+
+# Step 1: Read the data from a CSV file
+# Ensure the file 'study_data.csv' is in your working directory
+study_data <- read_csv("study_data.csv")
+
+# Print the first few rows of the data to verify it's loaded correctly
+print(head(study_data))
+
+# Step 2: Explore the data
+# Calculate summary statistics for both variables
+summary(study_data)
+
+# Create a scatter plot to visualize the relationship between Days and Time Study
+ggplot(study_data, aes(x = Days, y = `Time Study`)) +
+  geom_point() +
+  scale_x_continuous(breaks = 1:20) +  # Label all days on the x-axis
+  labs(title = "Scatter Plot of Study Time vs. Days",
+       x = "Days",
+       y = "Time Study (hours)") +
+  theme_minimal()
+
+# Step 3: Perform simple linear regression
+# Fit a linear model where Time Study is the dependent variable and Days is the independent variable
+model <- lm(`Time Study` ~ Days, data = study_data)
+
+# Step 4: Examine the model results
+# Print a summary of the model, including coefficients, R-squared, and p-values
+summary(model)
+
+# Use broom to get a tidy version of the model coefficients
+tidy_model <- tidy(model)
+print(tidy_model)
+
+# Step 5: Visualize the regression curve (adding a curve instead of a line)
+ggplot(study_data, aes(x = Days, y = `Time Study`)) +
+  geom_point() +
+  geom_smooth(method = "lm", formula = y ~ poly(x, 2), se = FALSE, color = "red") +  # Add polynomial curve
+  scale_x_continuous(breaks = 1:20) +  # Label all days on the x-axis
+  labs(title = "Polynomial Regression of Study Time Over Days",
+       x = "Days",
+       y = "Time Study (hours)") +
+  theme_minimal()
+
+# Step 6: Model diagnostics
+# Create diagnostic plots to check assumptions
+par(mfrow = c(2, 2))  # Set up a 2x2 plot layout
+plot(model)
+
+# Step 7: Predictions
+# Create a data frame with new Days values for prediction
+new_days <- data.frame(Days = seq(min(study_data$Days), max(study_data$Days), length.out = 100))
+
+# Make predictions using the original linear model
+predictions <- predict(model, newdata = new_days, interval = "confidence")
+
+# Combine predictions with new_days
+prediction_data <- cbind(new_days, predictions)
+
+# Plot the original data and polynomial regression curve only (no confidence interval)
+ggplot() +
+  geom_point(data = study_data, aes(x = Days, y = `Time Study`)) +
+  geom_smooth(data = study_data, aes(x = Days, y = `Time Study`), method = "lm", formula = y ~ poly(x, 2), se = FALSE, color = "blue") +  # Add polynomial curve
+  scale_x_continuous(breaks = 1:20) +  # Label all days on the x-axis
+  labs(title = "Polynomial Regression of Study Time Over Days",
+       x = "Days",
+       y = "Time Study (hours)") +
+  theme_minimal()
+
+# Print the R-squared value
+cat("R-squared:", summary(model)$r.squared, "\n")
+
+# Print the equation of the regression line
+cat("Regression equation: Time Study =", 
+    round(coef(model)[1], 3), "+", 
+    round(coef(model)[2], 3), "* Days\n")
+
+
